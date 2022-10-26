@@ -114,6 +114,15 @@
             android:layout_width="25dp"
             android:layout_height="25dp"/>
 
+        <ImageButton
+            android:tag="@color/white"
+            android:background="@color/white"
+            android:src="@drawable/pallet_normal"
+            android:layout_margin="2dp"
+            android:onClick="paintClicked"
+            android:layout_width="25dp"
+            android:layout_height="25dp"/>
+
     </LinearLayout>
 
     <LinearLayout
@@ -124,6 +133,13 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
+
+        <ImageButton
+            android:id="@+id/ib_gallery"
+            android:src="@drawable/ic_gallery"
+            android:layout_margin="5dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"/>
 
         <ImageButton
             android:id="@+id/ib_brush"
