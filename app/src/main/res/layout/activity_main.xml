@@ -26,9 +26,9 @@
 
         <com.quocdat.drawingapp.widgets.DrawingView
             android:id="@+id/drawing_view"
-            android:background="#00FFFFFF"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"/>
+            android:layout_height="match_parent"
+            android:background="#00FFFFFF" />
 
     </FrameLayout>
 
@@ -154,6 +154,13 @@
             android:layout_margin="5dp"
             android:src="@drawable/ic_brush"
             android:scaleType="fitXY"
+            android:layout_width="50dp"
+            android:layout_height="50dp"/>
+
+        <ImageButton
+            android:id="@+id/ib_save"
+            android:layout_margin="5dp"
+            android:src="@drawable/ic_save"
             android:layout_width="50dp"
             android:layout_height="50dp"/>
 

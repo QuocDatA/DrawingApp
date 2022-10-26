@@ -4,6 +4,10 @@ import android.Manifest
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
@@ -15,9 +19,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.get
+import androidx.lifecycle.lifecycleScope
 import com.quocdat.drawingapp.R
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.dialog_brush_size.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -77,6 +88,85 @@ class MainActivity : AppCompatActivity() {
         ib_undo.setOnClickListener {
             drawing_view?.onClickUndo()
         }
+
+        ib_save.setOnClickListener {
+            if (isReadStorageAllowed()){
+                lifecycleScope.launch{
+                    val myBitmap: Bitmap = getBitmapFromView(drawing_view_container)
+                    saveBitmapFile(myBitmap)
+                }
+            }
+        }
+    }
+
+    private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
+        var result = ""
+        withContext(Dispatchers.IO){
+            if (mBitmap != null){
+                try {
+                    val bytes = ByteArrayOutputStream()
+                    mBitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
+
+                    val f = File(externalCacheDir?.absoluteFile.toString() +
+                        File.separator + "KidsDrawingApp_" + System.currentTimeMillis() / 1000 + ".png"
+                    )
+
+                    val fo = FileOutputStream(f)
+                    fo.write(bytes.toByteArray())
+                    fo.close()
+
+                    result = f.absolutePath
+
+                    runOnUiThread {
+                        if (result.isNotEmpty()){
+                            Toast.makeText(
+                                this@MainActivity,
+                                "File saved successfully: $result",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }else{
+                            Toast.makeText(
+                                this@MainActivity,
+                                "Something went wrong while saving file!",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                }catch (e: Exception){
+                    result = ""
+                    e.printStackTrace()
+                }
+            }
+        }
+        return result
+    }
+
+    private fun getBitmapFromView(view: View): Bitmap{
+        //Define a bitmap with the same size as the view
+        //CreatedBitmap: Return a mutable bitmap with the specified width and height
+        val returnBitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
+
+        //Bind a canvas to it
+        val canvas = Canvas(returnBitmap)
+
+        //Get view's background
+        val bgDrawable = view.background
+        if (bgDrawable != null){
+            bgDrawable.draw(canvas)
+        }else{
+            canvas.drawColor(Color.WHITE)
+        }
+
+        //draw view on the canvas
+        view.draw(canvas)
+        return returnBitmap
+    }
+
+    private fun isReadStorageAllowed(): Boolean{
+        val result = ContextCompat.checkSelfPermission(this@MainActivity,
+            Manifest.permission.READ_EXTERNAL_STORAGE)
+
+        return result == PackageManager.PERMISSION_GRANTED
     }
 
     private fun requestStoragePermission(){
@@ -88,7 +178,8 @@ class MainActivity : AppCompatActivity() {
                 "Kids Drawing App need Access Your External Storage")
         }else{
            requestPermission.launch(arrayOf(
-               Manifest.permission.READ_EXTERNAL_STORAGE
+               Manifest.permission.READ_EXTERNAL_STORAGE,
+               Manifest.permission.WRITE_EXTERNAL_STORAGE
                 //TODO - Add writing external storage permission
            ))
         }
