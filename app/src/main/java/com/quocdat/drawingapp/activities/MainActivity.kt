@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.media.MediaScannerConnection
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.MediaStore
@@ -33,6 +34,7 @@ import java.io.FileOutputStream
 class MainActivity : AppCompatActivity() {
 
     private var mImageButtonCurrentPaint: ImageButton? = null
+    private var customProgressDialog: Dialog? = null
 
     private val openGalleryLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()){
@@ -91,12 +93,37 @@ class MainActivity : AppCompatActivity() {
 
         ib_save.setOnClickListener {
             if (isReadStorageAllowed()){
+                showCustomProgressDialog()
                 lifecycleScope.launch{
                     val myBitmap: Bitmap = getBitmapFromView(drawing_view_container)
                     saveBitmapFile(myBitmap)
                 }
             }
         }
+    }
+
+    private fun shareImage(result: String){
+        MediaScannerConnection.scanFile(this, arrayOf(result), null){
+            path, uri ->
+            val shareIntent = Intent()
+            shareIntent.action = Intent.ACTION_SEND
+            shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
+            shareIntent.type = "image/png"
+            startActivity(Intent.createChooser(shareIntent, "Share"))
+        }
+    }
+
+    private fun cancelProgressDialog(){
+        if (customProgressDialog != null){
+            customProgressDialog?.dismiss()
+            customProgressDialog = null
+        }
+    }
+
+    private fun showCustomProgressDialog(){
+        customProgressDialog = Dialog(this@MainActivity)
+        customProgressDialog?.setContentView(R.layout.dialog_custom_progress)
+        customProgressDialog?.show()
     }
 
     private suspend fun saveBitmapFile(mBitmap: Bitmap?): String{
@@ -118,12 +145,14 @@ class MainActivity : AppCompatActivity() {
                     result = f.absolutePath
 
                     runOnUiThread {
+                        cancelProgressDialog()
                         if (result.isNotEmpty()){
                             Toast.makeText(
                                 this@MainActivity,
                                 "File saved successfully: $result",
                                 Toast.LENGTH_LONG
                             ).show()
+                            shareImage(result)
                         }else{
                             Toast.makeText(
                                 this@MainActivity,
